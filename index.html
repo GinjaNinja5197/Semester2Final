@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta
+      name="description"
+      content="WorldPinr is a local street-view geography guessing game with draggable scenes and a polished interactive guessing map."
+    />
+    <title>WorldPinr - Geography Guessing Game</title>
+    <link rel="preconnect" href="https://maps.googleapis.com" />
+    <link rel="preconnect" href="https://maps.gstatic.com" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="game" aria-label="WorldPinr geography guessing game">
+      <section id="panorama" class="panorama loading" tabindex="0" aria-label="Street-level scene. Drag, scroll, or use arrow keys to look around.">
+        <div id="googleScene" class="google-scene" aria-hidden="true"></div>
+        <iframe
+          id="embedScene"
+          class="embed-scene"
+          title="Embedded street-level scene"
+          referrerpolicy="no-referrer-when-downgrade"
+          loading="lazy"
+          allowfullscreen
+        ></iframe>
+        <img id="sceneImage" alt="Street-level scene clue" draggable="false" />
+        <div class="scene-loader" aria-hidden="true">
+          <span></span>
+          <strong>Loading round</strong>
+        </div>
+        <div class="scene-gradient"></div>
+        <div class="road-overlay" aria-hidden="true"></div>
+        <div class="street-arrows" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div id="sceneProvider" class="scene-provider">Fallback scene</div>
+      </section>
+
+      <header class="hud" aria-label="Game status">
+        <div class="brand-card">
+          <span class="logo-mark">+</span>
+          <div>
+            <p class="eyebrow">WorldPinr</p>
+            <h1>Geo challenge</h1>
+          </div>
+        </div>
+        <div class="hud-stats">
+          <div class="hud-stat"><span>Round</span><strong id="roundLabel">1 / 5</strong></div>
+          <div class="hud-stat"><span>Score</span><strong id="scoreLabel">0</strong></div>
+          <div class="hud-stat"><span>Best</span><strong id="bestLabel">0</strong></div>
+          <div class="hud-stat timer"><span>Time</span><strong id="timerLabel">03:00</strong></div>
+        </div>
+      </header>
+
+      <aside class="compass-card" aria-label="Viewing direction">
+        <div id="compassNeedle" class="compass-needle">^</div>
+        <span>N</span>
+      </aside>
+
+      <section class="viewer-tools" aria-label="Street view controls">
+        <button id="lookLeft" type="button" aria-label="Look left">&larr;</button>
+        <button id="zoomOut" type="button" aria-label="Zoom out">-</button>
+        <button id="resetView" type="button">Reset</button>
+        <button id="zoomIn" type="button" aria-label="Zoom in">+</button>
+        <button id="lookRight" type="button" aria-label="Look right">&rarr;</button>
+      </section>
+
+      <section class="clue-card" aria-live="polite">
+        <div>
+          <p class="eyebrow">Current clue</p>
+          <p id="clueText">Explore the scene, then drop a pin on the map.</p>
+        </div>
+        <button id="hintButton" type="button">Hint</button>
+      </section>
+
+      <aside id="mapPanel" class="map-panel" aria-label="Guessing map panel">
+        <div class="map-topbar">
+          <div>
+            <p class="eyebrow">Place your guess</p>
+            <strong id="mapStatus">Click the map to drop a pin</strong>
+          </div>
+          <div class="map-actions">
+            <button id="resetMap" type="button">World</button>
+            <button id="expandMap" type="button" aria-expanded="false">Expand</button>
+          </div>
+        </div>
+        <div id="map" aria-label="World map for selecting your guess"></div>
+        <div class="map-submit">
+          <button id="clearGuess" class="secondary-action" type="button" disabled>Clear</button>
+          <button id="guessButton" class="guess-button" type="button" disabled>Make guess</button>
+        </div>
+      </aside>
+
+      <section id="resultPanel" class="result-panel hidden" aria-live="polite">
+        <div>
+          <p class="eyebrow">Round result</p>
+          <h2 id="resultTitle">Great guess!</h2>
+          <p id="resultDetails"></p>
+          <div class="score-meter" aria-hidden="true"><span id="scoreMeterFill"></span></div>
+        </div>
+        <button id="nextButton" type="button">Next round</button>
+      </section>
+    </main>
+
+    <div id="startModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="startTitle">
+      <div class="modal-card start-card">
+        <p class="eyebrow">Local practice. Street View optional.</p>
+        <h2 id="startTitle">Drop into the world and guess where you are.</h2>
+        <p>
+          Play five rounds: inspect the scene, place a pin on the map, and score up to 5,000 points per round.
+        </p>
+        <ul class="feature-list">
+          <li>Google Maps API guessing map when a key is configured</li>
+          <li>Real Google Street View scenes with a no-key fallback embed</li>
+          <li>Distance lines, timer pressure, and persistent best score</li>
+        </ul>
+        <button id="startButton" class="primary-action" type="button">Start game</button>
+      </div>
+    </div>
+
+    <div id="finalModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="finalTitle">
+      <div class="modal-card">
+        <p class="eyebrow">Game complete</p>
+        <h2 id="finalTitle">Final score</h2>
+        <p id="finalSummary"></p>
+        <div id="roundBreakdown" class="round-breakdown"></div>
+        <button id="playAgain" class="primary-action" type="button">Play again</button>
+      </div>
+    </div>
+
+    <script>
+      // Paste a browser-restricted Google Maps JavaScript API key here for the real Google map and Street View runtime.
+      // Example: window.WORLDPINR_GOOGLE_MAPS_API_KEY = "AIza...";
+      window.WORLDPINR_GOOGLE_MAPS_API_KEY = "AIzaSyCMZiGPJS47OCWYAsdBg91O2v0p6M5JSsw";
+    </script>
+    <script src="script.js"></script>
+  </body>
+</html>
